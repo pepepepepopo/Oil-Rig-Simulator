@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oil Rig Simulator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+        #oil-rig {
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+        }
+        #oil-rig img {
+            width: 200px;
+            height: auto;
+        }
+        .button {
+            padding: 10px 20px;
+            margin: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .button:hover {
+            background: #218838;
+        }
+        .stats {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .shop {
+            margin-top: 20px;
+        }
+        .shop-item {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px;
+            background: #ffc107;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .shop-item:hover {
+            background: #e0a800;
+        }
+    </style>
+</head>
+<body>
+    <h1>Oil Rig Simulator</h1>
+    <div id="oil-rig">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJVPqc33RU2L1k6MxkcqZHy-9HpApXYj3FEA&s" alt="Oil Rig">
+    </div>
+    <button class="button" onclick="drill()">Drill for Oil</button>
+    <button class="button" onclick="sellOil()">Sell Oil</button>
+    <button class="button" onclick="convertToPetroleum()">Convert to Petroleum</button>
+    <button class="button" onclick="sellPetroleum()">Sell Petroleum</button>
+    <button class="button" onclick="moveLocation()">Move Location</button>
+    
+    <div class="stats">
+        <p>Oil Extracted: <span id="oil-count">0</span> barrels</p>
+        <p>Petroleum Stored: <span id="petroleum-count">0</span> barrels</p>
+        <p>Petroleum Value Multiplier: x<span id="petroleum-multiplier">1.0</span></p>
+        <p>Money: $<span id="money-count">0</span></p>
+        <p>Location Moves: <span id="location-count">0</span></p>
+    </div>
+    
+    <!-- Shop Section -->
+    <div class="shop">
+        <h2>Shop</h2>
+        <div class="shop-item" onclick="buyUpgrade('drillSpeed')">Upgrade Drill Speed - $500</div>
+        <div class="shop-item" onclick="buyUpgrade('petroleumMultiplier')">Upgrade Petroleum Multiplier - $1000</div>
+        <div class="shop-item" onclick="buyUpgrade('oilCapacity')">Increase Oil Capacity - $1500</div>
+        <div class="shop-item" onclick="buyUpgrade('convertSpeed')">Faster Oil Conversion - $1200</div>
+        <div class="shop-item" onclick="buyUpgrade('sellSpeed')">Faster Sell Speed - $1300</div>
+        <div class="shop-item" onclick="buyUpgrade('disasterProtection')">Disaster Protection - $2000</div>
+        <div class="shop-item" onclick="buyUpgrade('autoDrill')">Auto-Drill - $3000</div>
+    </div>
+
+    <script>
+        let oil = 0;
+        let money = 0;
+        let locationMoves = 0;
+        let petroleum = 0;
+        let petroleumMultiplier = 1.0;
+        let drillSpeed = 1; // Drill speed multiplier (1 = normal speed)
+        let oilCapacity = 100; // Default oil capacity
+        let conversionSpeed = 1; // Speed of oil conversion (1 = normal speed)
+        let sellSpeed = 1; // Speed of selling oil and petroleum (1 = normal speed)
+        let disasterProtection = false; // Whether disaster protection is active
+        let autoDrill = false; // Whether auto-drill is active
+
+        // Increase petroleum multiplier over time
+        setInterval(() => {
+            if (petroleum > 0) {
+                petroleumMultiplier += 0.1; // Increase multiplier by 0.1 every second
+                updateStats();
+            }
+        }, 1000);
+
+        // Auto-drill functionality
+        setInterval(() => {
+            if (autoDrill) {
+                drill();
+            }
+        }, 5000); // Drill every 5 seconds if auto-drill is active
+
+        // Check for events/disasters every minute
+        setInterval(() => {
+            if (disasterProtection) return; // Skip disasters if protection is active
+            const randomEvent = Math.random();
+            if (randomEvent < 0.003) {
+                alert("A fire broke out! You must move locations immediately!");
+                moveLocation(true);
+            } else if (randomEvent < 0.025) {
+                alert("An oil leak occurred! You only need 50 barrels to move locations.");
+                if (oil >= 50) moveLocation(false);
+            }
+        }, 60000); // Check every 60 seconds
+
+        function drill() {
+            oil += drillSpeed;
+            if (oil > oilCapacity) oil = oilCapacity; // Limit oil to capacity
+            document.getElementById('oil-count').textContent = oil;
+
+            // Check if it's time to move location
+            if (oil >= oilCapacity) {
+                alert("Your oil reserve is full. Time to move to a new location!");
+                moveLocation(false);
+            }
+        }
+
+        function sellOil() {
+            if (oil > 0) {
+                money += oil * 10 * sellSpeed; // $10 per barrel with sell speed multiplier
+                oil = 0; // Reset oil count
+                updateStats();
+            } else {
+                alert("No oil to sell!");
+            }
+        }
+
+        function convertToPetroleum() {
+            if (oil > 0) {
+                petroleum += oil * conversionSpeed; // Faster conversion depending on upgrade
+                oil = 0; // Reset oil count
+                petroleumMultiplier = 1.0; // Reset multiplier
+                alert("Oil converted to petroleum!");
+                updateStats();
+            } else {
+                alert("No oil to convert!");
+            }
+        }
+
+        function sellPetroleum() {
+            if (petroleum > 0) {
+                const earnings = Math.floor(petroleum * 50 * petroleumMultiplier); // Base value $50 per barrel
+                money += earnings;
+                petroleum = 0; // Reset petroleum
+                petroleumMultiplier = 1.0; // Reset multiplier
+                alert(`You sold your petroleum for $${earnings}!`);
+                updateStats();
+            } else {
+                alert("No petroleum to sell!");
+            }
+        }
+
+        function moveLocation() {
+            // Check if the player has enough oil to move
+            if (oil >= 100) {
+                oil = 0; // Reset oil count after moving
+                locationMoves += 1;
+                updateStats();
+                alert("You moved to a new location.");
+            } else {
+                alert("You Can't Move Yet. You need at least 100 barrels of oil.");
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('oil-count').textContent = oil;
+            document.getElementById('petroleum-count').textContent = petroleum;
+            document.getElementById('petroleum-multiplier').textContent = petroleumMultiplier.toFixed(1);
+            document.getElementById('money-count').textContent = money;
+            document.getElementById('location-count').textContent = locationMoves;
+        }
+
+        function buyUpgrade(upgrade) {
+            if (upgrade === 'drillSpeed' && money >= 500) {
+                drillSpeed += 1; // Increase drill speed
+                money -= 500; // Deduct money
+                alert("Drill speed upgraded!");
+            } else if (upgrade === 'petroleumMultiplier' && money >= 1000) {
+                petroleumMultiplier += 0.5; // Increase petroleum multiplier
+                money -= 1000; // Deduct money
+                alert("Petroleum multiplier upgraded!");
+            } else if (upgrade === 'oilCapacity' && money >= 1500) {
+                oilCapacity += 50; // Increase oil capacity
+                money -= 1500; // Deduct money
+                alert("Oil capacity increased!");
+            } else if (upgrade === 'convertSpeed' && money >= 1200) {
+                conversionSpeed += 0.5; // Increase conversion speed
+                money -= 1200; // Deduct money
+                alert("Oil conversion speed upgraded!");
+            } else if (upgrade === 'sellSpeed' && money >= 1300) {
+                sellSpeed += 0.5; // Increase sell speed
+                money -= 1300; // Deduct money
+                alert("Sell speed upgraded!");
+            } else if (upgrade === 'disasterProtection' && money >= 2000) {
+                disasterProtection = true; // Activate disaster protection
+                money -= 2000; // Deduct money
+                alert("Disaster protection activated!");
+            } else if (upgrade === 'autoDrill' && money >= 3000) {
+                autoDrill = true; // Activate auto-drill
+                money -= 3000; // Deduct money
+                alert("Auto-drill activated!");
+            } else {
+                alert("Not enough money for this upgrade!");
+            }
+            updateStats();
+        }
+    </script>
+</body>
+</html>
